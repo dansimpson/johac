@@ -5,8 +5,8 @@ require "johac/version"
 spec = Gem::Specification.new do |s|
   s.name = "johac"
   s.version = Johac::Version
-  s.license = "Restricted"
-  s.date = "2017-06-29"
+  s.license = "MIT"
+  s.date = "2018-05-29"
   s.summary = "JSON Over HTTP API Client"
   s.email = "dan.simpson@gmail.com"
   s.homepage = "https://github.com/dansimpson/johac"

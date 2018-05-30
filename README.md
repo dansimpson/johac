@@ -1,4 +1,4 @@
-## Johac - JSON of HTTP API Client
+## Johac - JSON Over HTTP API Client
 
 Opinionated HTTP client which provides good defaults for your API Client.  Defaults:
 
@@ -87,7 +87,7 @@ response.each { |item| }
 response.map_body { |hash| MyModel.new(hash) }
 
 # Get an ostruct for the body (empty struct if missing)
-response.ostruct
+response.object
 ```
 
 Alternative API for working with object or exception.  The API is not async, it's just an optional convention.
