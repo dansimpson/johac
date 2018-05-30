@@ -1,5 +1,7 @@
 ## Johac - JSON Over HTTP API Client
 
+![build status](https://travis-ci.org/dansimpson/johac.svg?branch=master "Build Status")
+
 Opinionated HTTP client which provides good defaults for your API Client.  Defaults:
 
 * Requests/Responses are JSON
