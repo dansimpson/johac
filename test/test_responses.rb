@@ -69,14 +69,13 @@ class ResponseTest < JohacTest
     end
   end
 
-
   def test_timeout_response
     create_client(false)
     stub_johac_timeout(:get, '/test')
     response = @client.test_call_get
     assert response.error?
-    assert response.code == 0
-    assert response.body == {}
+    assert response.code == nil
+    assert response.body == nil
   end
 
   def test_503

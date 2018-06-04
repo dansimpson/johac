@@ -17,6 +17,11 @@ module Johac
         faraday.request :johac_headers
         faraday.request :johac_auth, @config.auth_scheme, @config.access_key, @config.secret_key
 
+        # Allow caller to tap into the request before it is sent
+        if @config.request_tap
+          faraday.request :request_tap, @config.request_tap
+        end
+
         # Retry requests
         faraday.request :retry, {
           max: 2,
@@ -100,6 +105,24 @@ module Johac
       def call(env)
         env[:request_headers]['User-Agent'] = AgentString
         env[:request_headers]['Accept'] = Accept
+        env[:request_headers]['Content-Type'] = Accept
+        @app.call(env)
+      end
+
+    end
+
+    # Write custom user agent to all requests.
+    class RequestTapMiddleware < Faraday::Middleware
+
+      Faraday::Request.register_middleware :request_tap => self
+
+      def initialize(app, request_tap)
+        @request_tap = request_tap
+        super(app)
+      end
+
+      def call(env)
+        @request_tap.call(env)
         @app.call(env)
       end
 

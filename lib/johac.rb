@@ -18,7 +18,7 @@ module Johac
     # @attr access_key  [String] Public access key used for authorization of requests.
     # @attr secret_key  [String] Private key used for authorization of requests.
     # @attr env         [String] Environment. 'testing', 'development', or 'production'.
-    Config = Struct.new(:base_uri, :auth_scheme, :access_key, :secret_key, :env, :logger, :raise_exceptions)
+    Config = Struct.new(:base_uri, :auth_scheme, :access_key, :secret_key, :env, :logger, :raise_exceptions, :request_tap)
 
 
     # Configure the global defaults for all clients built.

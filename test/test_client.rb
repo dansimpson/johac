@@ -26,8 +26,8 @@ class ResponseTest < JohacTest
   def test_response_error
     response = Johac::Response.new(Exception.new('what'))
     assert response.error?
-    assert response.status == 0
-    assert response.body == {}
+    assert response.status == nil
+    assert response.body == nil
   end
 
   def test_block_api
@@ -40,7 +40,7 @@ class ResponseTest < JohacTest
             assert err.kind_of?(Exception)
           }
 
-    Johac::Response.new(Faraday::Response.new)
+    Johac::Response.new(Faraday::Response.new(status: 200))
           .on_success { |object|
             assert true
           }
@@ -70,6 +70,39 @@ class ResponseTest < JohacTest
     stub_johac_response(:get, '/test', 'simple')
     mapped = @client.test_call_get.map_object { |hash| hash['key'] }
     assert mapped == "value"
+  end
+
+  def test_monadic_mapping
+    stub = stub_johac_response(:get, '/test', 'array')
+    response =  @client.test_call_get
+                       .flat_map { |r| @client.test_call_get }
+                       .flat_map { |r| @client.test_call_get }
+    assert response.kind_of?(Johac::Response)
+    assert response.count == 5
+    assert_requested stub, :times => 3
+  end
+
+  def test_monadic_mapping_error
+    @client.config.raise_exceptions = false
+    stub = stub_johac_response(:get, '/test', 'array', 400)
+    response =  @client.test_call_get
+                       .flat_map { |r| @client.test_call_get }
+                       .flat_map { |r| @client.test_call_get }
+    assert response.kind_of?(Johac::Response)
+    assert response.error?
+    assert_requested stub, :times => 1
+  end
+
+  def test_request_tap
+    stub_johac_response(:get, '/test', 'array')
+    @client.config.request_tap = lambda { |env|
+      env[:request_headers]['Tapped'] = 'Yes'
+    }
+    @client.test_call_get
+
+    assert_requested :get, @client.uri + '/test',
+      headers: {'Tapped' => 'Yes' },
+      times: 1
   end
 
 end

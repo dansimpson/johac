@@ -1,8 +1,7 @@
 module Johac
   class Response
 
-    attr_reader :response
-    attr_reader :exception
+    attr_reader :response, :exception, :body, :status
 
     include Enumerable
 
@@ -12,20 +11,16 @@ module Johac
       else
         @exception = result
       end
+
+      @body = result.body if result.respond_to?(:body)
+      @status = result.status if result.respond_to?(:status)
     end
 
     # Determine if the request failed
     #
     # @return true if response failed (http or expcetion)
     def error?
-      exception != nil || status >= 400
-    end
-
-    # HTTP Status code
-    #
-    # @return response status code
-    def status
-      response_status || exception_status || 0
+      status.nil? || status >= 400
     end
 
     # HTTP Status code
@@ -33,13 +28,6 @@ module Johac
     # @return response status code
     def code
       status
-    end
-
-    # HTTP Response body as a JSON parsed object
-    #
-    # @return Hash/Array of the JSON parsed body, or empty hash
-    def body
-      response_body || exception_body || {}
     end
 
     # @return OpenStruct object of hash
@@ -61,19 +49,23 @@ module Johac
     # @param args [Varargs] path of value
     #
     # @see {Hash.dig}
-    # @see {Array.dig}
     #
     # @return value of key path
     def dig(*args)
-      body.dig(*args)
+      body.kind_of?(Hash) ? body.dig(*args) : nil
     end
 
-    # Enumerate over response body opject
+    # Enumerate over response body object and return
+    # a new Response with a modified body
     #
     # @see {Enumerable}
     # @param block [Block] to invoke
     def each(&block)
-      body.each(&block)
+      if response?
+        body.each(&block)
+      else
+        self
+      end
     end
 
     # Invoke a block of code if the response fails, with
@@ -98,27 +90,31 @@ module Johac
       self
     end
 
+    # Chain another request to the successful response.  The expected
+    # output of the block is another Johac::Response object.
+    #
+    # This enables request chaining, where an error in the chain will
+    # prevent further processing and return an error response
+    #
+    # response = client.request1(param)
+    #                  .flat_map { |r| client.request2(r.object.value) }
+    #                  .flat_map { |r| client.request3(r.object.value) }
+    #
+    # @param block [Block] to invoke
+    def flat_map(&block)
+      if response?
+        yield self
+      else
+        self
+      end
+    end
+
+    # @see flat_map
+    def and_then(&block)
+      flat_map(&block)
+    end
+
     protected
-
-    def response_status
-      response? ? response.status : nil
-    end
-
-    def response_body
-      response? ? response.body : nil
-    end
-
-    def exception_status
-      response_error? ? exception.code : nil
-    end
-
-    def exception_body
-      response_error? ? exception.body : nil
-    end
-
-    def response_error?
-      exception.kind_of?(Johac::Error::ResponseError)
-    end
 
     def response?
       response != nil

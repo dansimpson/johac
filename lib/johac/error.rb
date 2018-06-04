@@ -8,15 +8,17 @@ module Johac
     # Exception to be used when dealing with HTTP responses from a Johac API.
     class ResponseError < Error
 
-      attr_reader :code
+      attr_reader :status
       attr_reader :body
+      attr_reader :headers
 
       # Will attempt to decode a response body via JSON, and look for the 'message' key in the resulting (assumed) hash. If response body cannot be parsed via JSON the entire response body is set as the message for the exception.
       #
       # @param body [String] Response body.
       # @param headers [Hash] Response headers.
-      def initialize(code, body, headers)
-        @code = code
+      def initialize(status, body, headers)
+        @status = status
+        @headers = headers
         @body = if headers['Content-Type'] == 'application/json'
           JSON.parse(body) rescue body
         else
