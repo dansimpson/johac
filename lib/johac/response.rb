@@ -103,7 +103,11 @@ module Johac
     # @param block [Block] to invoke
     def flat_map(&block)
       if response?
-        yield self
+        begin
+          yield self
+        rescue => e
+          Response.new(e)
+        end
       else
         self
       end
