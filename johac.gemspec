@@ -20,7 +20,7 @@ spec = Gem::Specification.new do |s|
   s.add_development_dependency("rake", "~> 10.4", ">= 10.4.2")
   s.add_development_dependency("rack", "~> 1.4")
   s.add_development_dependency("webmock", "~> 3.3.0")
-  s.add_development_dependency("yard", '~> 0.8.7.6')
+  s.add_development_dependency("yard", '~> 0.9.11')
   s.add_development_dependency("minitest", '~> 4.7', '>= 4.7.5')
 
   s.authors = ["Dan Simpson"]
