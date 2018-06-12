@@ -17,6 +17,7 @@ module Johac
     # @param config [Johac::Config]
     def initialize(config=nil)
       @config = Johac.merged_config(config)
+      @mutex = Mutex.new
     end
 
     # Reference to +base_uri+ set on {Johac.config} in {Johac.configure} or in the constructor.
@@ -32,6 +33,44 @@ module Johac
     # @return [String] One of "testing", "development", or "production"
     def env
       config.env
+    end
+
+    # Produce curls commands for captured requests made, within the block
+    #
+    # @param [Block] the block which invokes one or more requests
+    # @return [String] requests which were captured as curl commands
+    def curl_capture(&block)
+      capture(&block).map { |env|
+        output = []
+        output << "curl -s -X#{env.method.to_s.upcase}"
+        env.request_headers.each { |name, value|
+          output << "-H'#{name}: #{value}'"
+        }
+        output << "'#{env.url}'"
+        if env.body
+          output << '-d'
+          output << "'#{env.body}'"
+        end
+        output.join(' ')
+      }
+    end
+
+    # Capture requests and prevent them from going to the remote.  Useful
+    # for testing.
+    #
+    # @param [Block] the block which invokes one or more requests
+    # @return [Array] faraday env structs which were captured in the block
+    def capture(&block)
+      result = []
+      @mutex.synchronize {
+        begin
+          connection.options.context = result
+          yield(self)
+        ensure
+          connection.options.context = nil
+        end
+      }
+      result
     end
 
     protected
@@ -59,6 +98,8 @@ module Johac
     def patch(path, options={})
       request { connection.patch(path, options[:body], options[:headers]) }
     end
+
+
 
     private
 

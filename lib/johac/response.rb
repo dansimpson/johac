@@ -1,11 +1,9 @@
 module Johac
   class Response
 
-    attr_reader :response, :exception, :body, :status
+    attr_reader :response, :exception, :body, :status, :chain
 
-    include Enumerable
-
-    def initialize(result)
+    def initialize(result, chain=[])
       if result.kind_of?(Faraday::Response)
         @response = result
       else
@@ -14,6 +12,7 @@ module Johac
 
       @body = result.body if result.respond_to?(:body)
       @status = result.status if result.respond_to?(:status)
+      @chain = chain
     end
 
     # Determine if the request failed
@@ -30,18 +29,37 @@ module Johac
       status
     end
 
-    # @return OpenStruct object of hash
+    # @return OpenStruct object of hash, or empty struct if error
     def object
-      OpenStruct.new(body)
+      if error?
+        OpenStruct.new(body)
+      else
+        OpenStruct.new
+      end
     end
 
-    # Map body hash to another value using a block
+    # Map response body if successful
     #
     # @param block [Block] mapping function block
     #
     # @return result of block
-    def map_object(&block)
-      yield body
+    def map(&block)
+      unless error?
+        yield body
+      else
+        nil
+      end
+    end
+
+    # Map the exception if present
+    #
+    # @param block [Block] to invoke
+    def map_error(&block)
+      if error?
+        yield exception
+      else
+        nil
+      end
     end
 
     # Dig for a item in the body
@@ -53,41 +71,6 @@ module Johac
     # @return value of key path
     def dig(*args)
       body.kind_of?(Hash) ? body.dig(*args) : nil
-    end
-
-    # Enumerate over response body object and return
-    # a new Response with a modified body
-    #
-    # @see {Enumerable}
-    # @param block [Block] to invoke
-    def each(&block)
-      if response?
-        body.each(&block)
-      else
-        self
-      end
-    end
-
-    # Invoke a block of code if the response fails, with
-    # the exception as the paramter.
-    #
-    # @param block [Block] to invoke
-    def on_error(&block)
-      if error?
-        yield exception
-      end
-      self
-    end
-
-    # Invoke a block of code if the response succeeds, with the content
-    # as a parameter
-    #
-    # @param block [Block] to invoke
-    def on_success(&block)
-      unless error?
-        yield body
-      end
-      self
     end
 
     # Chain another request to the successful response.  The expected
@@ -104,9 +87,11 @@ module Johac
     def flat_map(&block)
       if response?
         begin
-          yield self
+          result = yield self, chain
+          result.set_chain(chain + [self])
+          result
         rescue => e
-          Response.new(e)
+          Response.new(e, chain + [self])
         end
       else
         self
@@ -119,6 +104,10 @@ module Johac
     end
 
     protected
+
+    def set_chain(chain)
+      @chain = chain
+    end
 
     def response?
       response != nil

@@ -31,33 +31,32 @@ class ResponseTest < JohacTest
   end
 
   def test_block_api
-    Johac::Response.new(Exception.new('what'))
-          .on_success { |object|
-            refute true
-          }
-          .on_error { |err|
-            assert true
-            assert err.kind_of?(Exception)
-          }
+    response = Johac::Response.new(Exception.new('what'))
+    refute response.map { |object|
+      true
+    }
+    assert response.map_error { |err|
+      true
+    }
 
-    Johac::Response.new(Faraday::Response.new(status: 200))
-          .on_success { |object|
-            assert true
-          }
-          .on_error { |err|
-            refute true
-          }
+    response = Johac::Response.new(Faraday::Response.new(status: 200))
+    assert response.map { |object|
+      true
+    }
+    refute response.map_error { |err|
+      true
+    }
   end
 
   def test_enumerable
     stub_johac_response(:get, '/test', 'simple')
-    assert @client.test_call_get.first == ['key', 'value']
+    assert @client.test_call_get.body.first == ['key', 'value']
   end
 
   def test_enumerable_array
     stub_johac_response(:get, '/test', 'array')
-    assert @client.test_call_get.first == { 'x' => 1 }
-    assert @client.test_call_get.map { |v| v['x'] }.reduce(:+) == 15
+    assert @client.test_call_get.body.first == { 'x' => 1 }
+    assert @client.test_call_get.map { |a| a.map { |v| v['x'] }}.reduce(:+) == 15
   end
 
   def test_struct_object
@@ -68,18 +67,26 @@ class ResponseTest < JohacTest
 
   def test_mapped_object
     stub_johac_response(:get, '/test', 'simple')
-    mapped = @client.test_call_get.map_object { |hash| hash['key'] }
+    mapped = @client.test_call_get.map { |hash| hash['key'] }
     assert mapped == "value"
   end
 
   def test_monadic_mapping
     stub = stub_johac_response(:get, '/test', 'array')
     response =  @client.test_call_get
-                       .flat_map { |r| @client.test_call_get }
-                       .flat_map { |r| @client.test_call_get }
+                       .flat_map { |r, chain|
+                          assert_equal 0, chain.size
+                          @client.test_call_get
+                       }.flat_map { |r, chain|
+                          assert_equal 1, chain.size
+                          @client.test_call_get
+                       }.flat_map { |r, chain|
+                          assert_equal 2, chain.size
+                          @client.test_call_get
+                       }
     assert response.kind_of?(Johac::Response)
-    assert response.count == 5
-    assert_requested stub, :times => 3
+    assert response.body.count == 5
+    assert_requested stub, :times => 4
   end
 
   def test_monadic_mapping_error

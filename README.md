@@ -76,38 +76,39 @@ response.code
 Helpers
 
 ```rb
-# helper to dig the response content
+# helper to dig the response content, only if hash and success
 response.dig('item', 'attribute')
 
-# Enumerable with content as hash
-response.each { |key, value| }
+# Map the body object to a domain model, or nil if error?
+response.map { |hash| MyModel.new(hash) }
 
-# Enumerable with array
-response.each { |item| }
-
-# Map the body object to a domain model, or empty
-response.map_body { |hash| MyModel.new(hash) }
+response.map_error { |exception| false }
 
 # Get an ostruct for the body (empty struct if missing)
 response.object
 ```
 
-Alternative API for working with object or exception.  The API is not async, it's just an optional convention.
+### Capturing Requests
+
+Johac has some helpers to capture requests and emit faraday Env structs or curl commands
 
 ```rb
-response.on_success { |object|
-  # Work with response hash
-}.on_error { |exception|
-  # Work with exception
+client.capture { |client|
+  client.my_api_call({ foo: 'bar' })
+}.each { |env|
+  puts env.inspect # Faraday::Env
+}
+
+client.capture_curl { |client|
+  client.my_api_call({ foo: 'bar' })
+}.each { |curl|
+  puts curl # curl -s -XMETHOD -H'..' 'uri...' [-d '{ ... }']
 }
 ```
 
-### Dealing with Errors/Exceptions
-
-
 ### The Endpoints Pattern
 
-I sometimes like to break out my calls into logical namespaces, then include them
+I sometimes like to organize calls into logical namespaces, then include them
 in the main client API.  Here is a simple example.
 
 ```rb
@@ -139,7 +140,5 @@ class MyClient < Johac::Client
 end
 
 client = MyClient.new({})
-client.get_twos.each { |two|
-
-}
+client.get_twos.error?
 ```

@@ -22,6 +22,10 @@ module Johac
           faraday.request :request_tap, @config.request_tap
         end
 
+        # Captures requests when client calls are made
+        # within a capture block
+        faraday.request :request_capture
+
         # Retry requests
         faraday.request :retry, {
           max: 2,
@@ -106,6 +110,22 @@ module Johac
         env[:request_headers]['User-Agent'] = AgentString
         env[:request_headers]['Accept'] = Accept
         env[:request_headers]['Content-Type'] = Accept
+        @app.call(env)
+      end
+
+    end
+
+    # A request middleware that captures the request and halts the request, if
+    # the connections context isn't nil
+    class RequestCaptureMiddleware < Faraday::Middleware
+
+      Faraday::Request.register_middleware :request_capture => self
+
+      def call(env)
+        if env.request.context.kind_of?(Array)
+          env.request.context << env
+          return false
+        end
         @app.call(env)
       end
 

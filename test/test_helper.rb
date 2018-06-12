@@ -10,6 +10,12 @@ class TestClient < Johac::Client
     get('/test')
   end
 
+  def test_call_get_param(params)
+    get('/test', {
+      query: params
+    })
+  end
+
   def test_call_head
     head('/test')
   end
