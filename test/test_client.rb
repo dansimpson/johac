@@ -62,13 +62,13 @@ class ResponseTest < JohacTest
   def test_struct_object
     stub_johac_response(:get, '/test', 'simple')
     struct =  @client.test_call_get.object
-    assert struct.key == "value"
+    assert_equal 'value', struct.key
   end
 
   def test_mapped_object
     stub_johac_response(:get, '/test', 'simple')
     mapped = @client.test_call_get.map { |hash| hash['key'] }
-    assert mapped == "value"
+    assert_equal 'value', mapped
   end
 
   def test_monadic_mapping

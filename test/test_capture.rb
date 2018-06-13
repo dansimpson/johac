@@ -42,8 +42,8 @@ class ResponseTest < JohacTest
       client.test_call_get_param(key: 'value')
       client.test_call_post
     }
-    assert_equal "curl -s -XGET -H'User-Agent: johac/0.9.2 ruby/2.3.1' -H'Accept: application/json' -H'Content-Type: application/json' -H'Authorization: Basic dXNlcjpwYXNzd29yZA==' 'http://api.testhost.test/test?key=value'", result.first
-    assert_equal "curl -s -XPOST -H'User-Agent: johac/0.9.2 ruby/2.3.1' -H'Content-Type: application/json' -H'Accept: application/json' -H'Authorization: Basic dXNlcjpwYXNzd29yZA==' 'http://api.testhost.test/test' -d '{\"param\":\"value\"}'", result.last
+    assert_equal "curl -s -XGET -H'Accept: application/json' -H'Content-Type: application/json' -H'Authorization: Basic dXNlcjpwYXNzd29yZA==' 'http://api.testhost.test/test?key=value'", result.first
+    assert_equal "curl -s -XPOST -H'Content-Type: application/json' -H'Accept: application/json' -H'Authorization: Basic dXNlcjpwYXNzd29yZA==' 'http://api.testhost.test/test' -d '{\"param\":\"value\"}'", result.last
   end
 
 end

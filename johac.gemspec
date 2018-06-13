@@ -10,8 +10,7 @@ spec = Gem::Specification.new do |s|
   s.summary = "JSON Over HTTP API Client"
   s.email = "dan.simpson@gmail.com"
   s.homepage = "https://github.com/dansimpson/johac"
-  s.description = "Opintionated library for implement HTTP+JSON API clients"
-  s.has_rdoc = true
+  s.description = "Opintionated library for implementing HTTP+JSON API clients"
 
   s.add_dependency("faraday", "~> 0.15.2", ">= 0.9.2")
   s.add_dependency('faraday_middleware', '~> 0.12.2')

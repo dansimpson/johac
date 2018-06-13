@@ -43,7 +43,9 @@ module Johac
       capture(&block).map { |env|
         output = []
         output << "curl -s -X#{env.method.to_s.upcase}"
-        env.request_headers.each { |name, value|
+        env.request_headers.select { |name, value|
+          name.downcase != 'user-agent'
+        }.each { |name, value|
           output << "-H'#{name}: #{value}'"
         }
         output << "'#{env.url}'"

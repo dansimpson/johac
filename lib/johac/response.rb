@@ -31,11 +31,7 @@ module Johac
 
     # @return OpenStruct object of hash, or empty struct if error
     def object
-      if error?
-        OpenStruct.new(body)
-      else
-        OpenStruct.new
-      end
+      error? ? OpenStruct.new : OpenStruct.new(body)
     end
 
     # Map response body if successful
